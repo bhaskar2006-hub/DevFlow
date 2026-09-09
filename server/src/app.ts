@@ -13,6 +13,7 @@ import projectRoutes from './routes/project.routes';
 import issueRoutes from './routes/issue.routes';
 import commentRoutes from './routes/comment.routes';
 import activityRoutes from './routes/activity.routes';
+import slackRoutes from './routes/slack.routes';
 
 const app: Application = express();
 
@@ -26,6 +27,22 @@ app.use(
 );
 
 app.options('*', cors());
+
+// Middleware to capture raw body for Slack signature verification
+app.use((req: Request, res: Response, next) => {
+  if (req.path.startsWith('/api/slack')) {
+    let rawBody = '';
+    req.on('data', (chunk) => {
+      rawBody += chunk.toString();
+    });
+    req.on('end', () => {
+      (req as any).rawBody = rawBody;
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -59,6 +76,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/issues', issueRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/activities', activityRoutes);
+app.use('/api/slack', slackRoutes);
 
 // Fallback for Netlify function routing if path stripped
 app.use('/auth', authRoutes);
