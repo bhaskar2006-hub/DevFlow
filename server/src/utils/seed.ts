@@ -12,10 +12,11 @@ import { Activity } from '../models/Activity';
 import { hashPassword } from './password';
 
 const seedData = async () => {
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/devflow';
+  const rawUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/devflow';
+  const mongoUri = rawUri.trim().replace(/[\r\n\s]+/g, '');
 
   try {
-    console.log(`🌱 Connecting to MongoDB at ${mongoUri}...`);
+    console.log(`🌱 Connecting to MongoDB at ${mongoUri.replace(/:([^:@]+)@/, ':****@')}...`);
     await mongoose.connect(mongoUri);
     console.log(' connected to database.');
 
