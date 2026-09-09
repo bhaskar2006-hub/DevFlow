@@ -32,8 +32,15 @@ export const Navbar: React.FC = () => {
   return (
     <>
       <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 px-6 flex items-center justify-between">
-        {/* Organization Switcher */}
+        {/* DevFlow Logo & Organization Switcher */}
         <div className="flex items-center space-x-4">
+          {/* Logo */}
+          <div className="flex items-center space-x-2 pr-4 border-r border-slate-200">
+            <img src="/devflow-icon.svg" alt="DevFlow" className="w-8 h-8" />
+            <span className="font-bold text-lg text-slate-900 hidden sm:inline">DevFlow</span>
+          </div>
+
+          {/* Organization Switcher */}
           <div className="relative">
             <button
               onClick={() => setShowOrgDropdown(!showOrgDropdown)}
