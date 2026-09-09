@@ -346,7 +346,7 @@ export class SlackController {
           }),
         });
 
-        const data = await response.json();
+        const data = (await response.json()) as any;
         if (!data.ok) {
           throw new Error(`Slack API error: ${data.error}`);
         }
@@ -381,7 +381,7 @@ export class SlackController {
         }).toString(),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as any;
 
       if (!data.ok) {
         res.status(400).json({ error: `Slack authorization failed: ${data.error}` });

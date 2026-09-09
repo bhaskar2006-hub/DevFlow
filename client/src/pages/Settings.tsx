@@ -2,23 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { orgAPI } from '../services/api';
 import { 
-  Bell, 
   Send, 
   CheckCircle2, 
   AlertCircle, 
-  Mail, 
   ExternalLink, 
   Save, 
   ShieldAlert,
-  Sliders,
-  Webhook
+  Webhook,
+  Sparkles,
+  Check
 } from 'lucide-react';
 
 export const Settings: React.FC = () => {
   const { currentOrg, userRole, refreshUserData } = useAuth();
   const [slackWebhookUrl, setSlackWebhookUrl] = useState('');
   const [slackNotifications, setSlackNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -32,7 +30,6 @@ export const Settings: React.FC = () => {
     if (currentOrg) {
       setSlackWebhookUrl(currentOrg.slackWebhookUrl || '');
       setSlackNotifications(currentOrg.slackNotifications !== false);
-      setEmailNotifications(currentOrg.emailNotifications !== false);
     }
   }, [currentOrg]);
 
@@ -48,14 +45,13 @@ export const Settings: React.FC = () => {
       await orgAPI.update(currentOrg.id, {
         slackWebhookUrl: slackWebhookUrl.trim(),
         slackNotifications,
-        emailNotifications,
       });
 
       await refreshUserData();
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3500);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update integration settings');
+      setError(err.response?.data?.message || 'Failed to update Slack integration settings');
     } finally {
       setSaving(false);
     }
@@ -91,9 +87,9 @@ export const Settings: React.FC = () => {
     <div className="p-8 max-w-4xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Workspace Integrations & Notifications</h1>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Slack Integration</h1>
         <p className="text-xs text-slate-500 mt-1">
-          Connect your organization <span className="font-semibold text-slate-700">{currentOrg?.name}</span> to Slack and Email channels.
+          Connect your organization <span className="font-semibold text-slate-700">{currentOrg?.name}</span> to a Slack channel for instant real-time updates.
         </p>
       </div>
 
@@ -103,7 +99,7 @@ export const Settings: React.FC = () => {
           <div>
             <p className="font-bold">Admin Permissions Required</p>
             <p className="mt-0.5 text-amber-700">
-              Only Workspace Owners and Admins can configure integration webhooks and notification policies.
+              Only Workspace Owners and Admins can configure the Slack webhook URL and notification settings.
             </p>
           </div>
         </div>
@@ -119,7 +115,7 @@ export const Settings: React.FC = () => {
       {saveSuccess && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center space-x-3 text-emerald-800 text-xs font-semibold">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>Integration settings saved successfully!</span>
+          <span>Slack integration settings saved successfully!</span>
         </div>
       )}
 
@@ -133,7 +129,7 @@ export const Settings: React.FC = () => {
               </div>
               <div>
                 <h2 className="font-bold text-slate-900 text-sm">Slack Incoming Webhook</h2>
-                <p className="text-xs text-slate-500">Post ticket alerts, status updates & comments directly to a Slack channel</p>
+                <p className="text-xs text-slate-500">Post ticket alerts, status updates & comments directly into a Slack channel</p>
               </div>
             </div>
 
@@ -184,11 +180,25 @@ export const Settings: React.FC = () => {
             </div>
           )}
 
+          {/* Setup Instructions */}
+          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/60 space-y-2 text-xs text-slate-600">
+            <div className="flex items-center space-x-1.5 font-bold text-slate-800">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span>How to get your Slack Webhook in 1 minute:</span>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-slate-500 pl-1">
+              <li>Open <a href="https://api.slack.com/apps" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-medium">api.slack.com/apps</a> and click <strong>Create New App</strong> &rarr; <em>From scratch</em>.</li>
+              <li>Under <strong>Features</strong>, enable <strong>Incoming Webhooks</strong>.</li>
+              <li>Click <strong>Add New Webhook to Workspace</strong> and choose your notification channel (e.g. <code>#general</code> or <code>#devflow</code>).</li>
+              <li>Copy the generated Webhook URL, paste it above, and click <strong>Test Slack</strong>.</li>
+            </ol>
+          </div>
+
           {/* Toggle Slack notifications */}
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-slate-800">Enable Slack Notifications</span>
-              <p className="text-[11px] text-slate-400">Trigger alerts whenever issues are created, moved, or commented on</p>
+              <span className="text-xs font-bold text-slate-800">Enable Real-Time Slack Notifications</span>
+              <p className="text-[11px] text-slate-400">Trigger alerts whenever tickets are created, sprint statuses change, or comments are added</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -196,41 +206,6 @@ export const Settings: React.FC = () => {
                 disabled={!canManage}
                 checked={slackNotifications}
                 onChange={(e) => setSlackNotifications(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-            </label>
-          </div>
-        </div>
-
-        {/* Email Card */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs shadow-indigo-200">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-900 text-sm">Email Notifications (Resend / SMTP)</h2>
-                <p className="text-xs text-slate-500">Deliver ticket assignment and workspace invitation emails</p>
-              </div>
-            </div>
-            <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-bold rounded-lg uppercase tracking-wider">
-              Active
-            </span>
-          </div>
-
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-            <div>
-              <span className="text-xs font-bold text-slate-800">Dispatch Email Alerts</span>
-              <p className="text-[11px] text-slate-400">Notify team members via email when assigned to an issue or invited to this workspace</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                disabled={!canManage}
-                checked={emailNotifications}
-                onChange={(e) => setEmailNotifications(e.target.checked)}
                 className="sr-only peer"
               />
               <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -247,7 +222,7 @@ export const Settings: React.FC = () => {
               className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-2 shadow-xs shadow-indigo-200 transition-all"
             >
               <Save className="w-4 h-4" />
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+              <span>{saving ? 'Saving...' : 'Save Settings'}</span>
             </button>
           </div>
         )}

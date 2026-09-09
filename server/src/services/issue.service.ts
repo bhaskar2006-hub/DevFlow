@@ -3,7 +3,6 @@ import { Project } from '../models/Project';
 import { User } from '../models/User';
 import { ActivityService } from './activity.service';
 import { SlackService } from './slack.service';
-import { EmailService } from './email.service';
 import { AppError } from '../middleware/error.middleware';
 
 export interface CreateIssueDTO {
@@ -96,18 +95,6 @@ export class IssueService {
       assigneeName: populatedIssue.assigneeId?.name,
       projectName: project.name,
     }).catch((e) => console.warn('[Slack Notification Error]', e));
-
-    // Asynchronously dispatch Email notification to assignee
-    if (populatedIssue.assigneeId?.email) {
-      EmailService.sendIssueAssignedEmail({
-        recipientEmail: populatedIssue.assigneeId.email,
-        recipientName: populatedIssue.assigneeId.name,
-        issueKey: issue.key,
-        issueTitle: issue.title,
-        priority: issue.priority,
-        assignedBy: populatedIssue.reporterId?.name || 'Team member',
-      }).catch((e) => console.warn('[Email Notification Error]', e));
-    }
 
     return populatedIssue as IIssue;
   }
@@ -247,23 +234,6 @@ export class IssueService {
         toStatus: issue.status,
         actorName: actor?.name || 'Team member',
       }).catch((e) => console.warn('[Slack Notification Error]', e));
-    }
-
-    // Send Email notification on new assignment
-    if (
-      updates.assigneeId !== undefined &&
-      updates.assigneeId?.toString() !== oldAssignee &&
-      updatedIssue.assigneeId?.email
-    ) {
-      const actor = await User.findById(userId);
-      EmailService.sendIssueAssignedEmail({
-        recipientEmail: updatedIssue.assigneeId.email,
-        recipientName: updatedIssue.assigneeId.name,
-        issueKey: issue.key,
-        issueTitle: issue.title,
-        priority: issue.priority,
-        assignedBy: actor?.name || 'Team member',
-      }).catch((e) => console.warn('[Email Notification Error]', e));
     }
 
     return updatedIssue as IIssue;

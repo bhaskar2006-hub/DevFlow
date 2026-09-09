@@ -8,7 +8,6 @@ export interface IOrganization extends Document {
   avatarUrl?: string;
   slackWebhookUrl?: string;
   slackNotifications?: boolean;
-  emailNotifications?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,10 +50,6 @@ const OrganizationSchema = new Schema<IOrganization>(
       trim: true,
     },
     slackNotifications: {
-      type: Boolean,
-      default: true,
-    },
-    emailNotifications: {
       type: Boolean,
       default: true,
     },

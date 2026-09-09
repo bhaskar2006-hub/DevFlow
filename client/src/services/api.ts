@@ -54,7 +54,6 @@ export interface Organization {
   avatarUrl?: string;
   slackWebhookUrl?: string;
   slackNotifications?: boolean;
-  emailNotifications?: boolean;
   membershipRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
   createdAt: string;
 }
