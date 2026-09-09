@@ -1,12 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Users, Layers, Sparkles } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Users, Layers, Sparkles, Sliders } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/projects', label: 'Projects', icon: FolderKanban },
     { to: '/team', label: 'Team', icon: Users },
+    { to: '/settings', label: 'Integrations', icon: Sliders },
   ];
 
   return (

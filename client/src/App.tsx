@@ -14,6 +14,7 @@ import { Projects } from './pages/Projects';
 import { ProjectDetails } from './pages/ProjectDetails';
 import { IssueDetails } from './pages/IssueDetails';
 import { Team } from './pages/Team';
+import { Settings } from './pages/Settings';
 
 const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
@@ -90,6 +91,7 @@ export const App: React.FC = () => {
               <Route path="/projects/:id" element={<ProjectDetails />} />
               <Route path="/issues/:id" element={<IssueDetails />} />
               <Route path="/team" element={<Team />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
 
             {/* Catch-all fallback */}

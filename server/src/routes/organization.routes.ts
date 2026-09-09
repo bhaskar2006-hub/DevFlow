@@ -14,6 +14,7 @@ router.get('/', OrganizationController.getAll);
 router.get('/my', OrganizationController.getAll); // Support both /api/organizations and /api/organizations/my
 router.get('/:id', OrganizationController.getById);
 router.patch('/:id', requireOrgRole(['OWNER', 'ADMIN']), OrganizationController.update);
+router.post('/:id/test-slack', requireOrgRole(['OWNER', 'ADMIN']), OrganizationController.testSlack);
 router.delete('/:id', requireOrgRole(['OWNER']), OrganizationController.delete);
 
 // Organization Members

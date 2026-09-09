@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { Comment } from '../models/Comment';
 import { Issue } from '../models/Issue';
 import { ActivityService } from '../services/activity.service';
+import { SlackService } from '../services/slack.service';
 import { AppError } from '../middleware/error.middleware';
 
 export class CommentController {
@@ -35,10 +36,19 @@ export class CommentController {
         details: { issueKey: issue.key },
       });
 
+      const populatedComment = (await comment.populate('authorId', 'name email avatar')) as any;
+
+      // Dispatch Slack notification asynchronously
+      SlackService.notifyCommentAdded(issue.organizationId.toString(), {
+        issueKey: issue.key,
+        authorName: populatedComment.authorId?.name || req.user!.name || 'User',
+        commentText: comment.content,
+      }).catch((e) => console.warn('[Slack Notification Error]', e));
+
       res.status(201).json({
         success: true,
         message: 'Comment added successfully',
-        data: await comment.populate('authorId', 'name email avatar'),
+        data: populatedComment,
       });
     } catch (error) {
       next(error);

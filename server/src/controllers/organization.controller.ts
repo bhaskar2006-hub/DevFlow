@@ -4,9 +4,65 @@ import { Organization } from '../models/Organization';
 import { OrganizationMember } from '../models/OrganizationMember';
 import { User } from '../models/User';
 import { ActivityService } from '../services/activity.service';
+import { SlackService } from '../services/slack.service';
+import { EmailService } from '../services/email.service';
 import { AppError } from '../middleware/error.middleware';
 
 export class OrganizationController {
+  public static async testSlack(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { webhookUrl } = req.body;
+
+      const organization = await Organization.findById(id);
+      if (!organization) {
+        throw new AppError('Organization not found', 404);
+      }
+
+      const targetWebhook = webhookUrl || organization.slackWebhookUrl;
+      if (!targetWebhook) {
+        throw new AppError('Slack Webhook URL is required to send test message', 400);
+      }
+
+      await SlackService.testWebhook(targetWebhook, organization.name);
+
+      res.status(200).json({
+        success: true,
+        message: 'Slack test notification sent successfully!',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async update(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { name, description, avatarUrl, slackWebhookUrl, slackNotifications, emailNotifications } = req.body;
+
+      const organization = await Organization.findById(id);
+      if (!organization) {
+        throw new AppError('Organization not found', 404);
+      }
+
+      if (name) organization.name = name.trim();
+      if (description !== undefined) organization.description = description;
+      if (avatarUrl !== undefined) organization.avatarUrl = avatarUrl;
+      if (slackWebhookUrl !== undefined) organization.slackWebhookUrl = slackWebhookUrl.trim();
+      if (slackNotifications !== undefined) organization.slackNotifications = slackNotifications;
+      if (emailNotifications !== undefined) organization.emailNotifications = emailNotifications;
+
+      await organization.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Organization updated successfully',
+        data: organization,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
   public static async create(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { name, slug, description, avatarUrl } = req.body;
@@ -100,32 +156,6 @@ export class OrganizationController {
     }
   }
 
-  public static async update(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { id } = req.params;
-      const { name, description, avatarUrl } = req.body;
-
-      const organization = await Organization.findById(id);
-      if (!organization) {
-        throw new AppError('Organization not found', 404);
-      }
-
-      if (name) organization.name = name.trim();
-      if (description !== undefined) organization.description = description;
-      if (avatarUrl !== undefined) organization.avatarUrl = avatarUrl;
-
-      await organization.save();
-
-      res.status(200).json({
-        success: true,
-        message: 'Organization updated successfully',
-        data: organization,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
   public static async delete(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
@@ -199,6 +229,17 @@ export class OrganizationController {
         action: 'MEMBER_JOINED',
         details: { memberEmail: user.email, role },
       });
+
+      // Send email notification asynchronously
+      const organization = await Organization.findById(id);
+      if (organization && organization.emailNotifications !== false) {
+        EmailService.sendMemberInvitedEmail({
+          recipientEmail: user.email,
+          orgName: organization.name,
+          role,
+          invitedBy: req.user!.name,
+        }).catch((e) => console.warn('[Email Notification Error]', e));
+      }
 
       res.status(201).json({
         success: true,

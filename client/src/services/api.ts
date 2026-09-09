@@ -52,6 +52,9 @@ export interface Organization {
   description?: string;
   ownerId: any;
   avatarUrl?: string;
+  slackWebhookUrl?: string;
+  slackNotifications?: boolean;
+  emailNotifications?: boolean;
   membershipRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
   createdAt: string;
 }
@@ -126,7 +129,8 @@ export const orgAPI = {
   getMyOrganizations: () => api.get<{ success: boolean; data: Organization[] }>('/organizations/my'),
   getByIdOrSlug: (idOrSlug: string) => api.get<{ success: boolean; data: Organization }>(`/organizations/${idOrSlug}`),
   create: (data: { name: string; slug: string; description?: string }) => api.post('/organizations', data),
-  update: (id: string, data: Partial<Organization>) => api.patch(`/organizations/${id}`, data),
+  update: (id: string, data: Partial<Organization>) => api.patch<{ success: boolean; data: Organization }>(`/organizations/${id}`, data),
+  testSlack: (orgId: string, webhookUrl?: string) => api.post<{ success: boolean; message: string }>(`/organizations/${orgId}/test-slack`, { webhookUrl }),
   getMembers: (orgId: string) => api.get<{ success: boolean; data: Member[] }>(`/organizations/${orgId}/members`),
   addMember: (orgId: string, data: { email: string; role?: string }) => api.post(`/organizations/${orgId}/members`, data),
   updateMemberRole: (orgId: string, memberId: string, role: string) => api.patch(`/organizations/${orgId}/members/${memberId}`, { role }),

@@ -1,6 +1,9 @@
 import { Issue, IIssue } from '../models/Issue';
 import { Project } from '../models/Project';
+import { User } from '../models/User';
 import { ActivityService } from './activity.service';
+import { SlackService } from './slack.service';
+import { EmailService } from './email.service';
 import { AppError } from '../middleware/error.middleware';
 
 export interface CreateIssueDTO {
@@ -77,11 +80,36 @@ export class IssueService {
       },
     });
 
-    return (await issue.populate([
+    const populatedIssue = (await issue.populate([
       { path: 'reporterId', select: 'name email avatar' },
       { path: 'assigneeId', select: 'name email avatar' },
       { path: 'projectId', select: 'name key' },
-    ])) as IIssue;
+    ])) as any;
+
+    // Asynchronously dispatch Slack notification
+    SlackService.notifyIssueCreated(project.organizationId.toString(), {
+      issueKey: issue.key,
+      title: issue.title,
+      type: issue.type,
+      priority: issue.priority,
+      reporterName: populatedIssue.reporterId?.name || 'User',
+      assigneeName: populatedIssue.assigneeId?.name,
+      projectName: project.name,
+    }).catch((e) => console.warn('[Slack Notification Error]', e));
+
+    // Asynchronously dispatch Email notification to assignee
+    if (populatedIssue.assigneeId?.email) {
+      EmailService.sendIssueAssignedEmail({
+        recipientEmail: populatedIssue.assigneeId.email,
+        recipientName: populatedIssue.assigneeId.name,
+        issueKey: issue.key,
+        issueTitle: issue.title,
+        priority: issue.priority,
+        assignedBy: populatedIssue.reporterId?.name || 'Team member',
+      }).catch((e) => console.warn('[Email Notification Error]', e));
+    }
+
+    return populatedIssue as IIssue;
   }
 
   public static async getIssues(filter: IssueFilterQuery) {
@@ -203,11 +231,42 @@ export class IssueService {
       });
     }
 
-    return (await issue.populate([
+    const updatedIssue = (await issue.populate([
       { path: 'reporterId', select: 'name email avatar' },
       { path: 'assigneeId', select: 'name email avatar' },
       { path: 'projectId', select: 'name key' },
-    ])) as IIssue;
+    ])) as any;
+
+    // Send Slack notification on status change
+    if (updates.status && updates.status !== oldStatus) {
+      const actor = await User.findById(userId);
+      SlackService.notifyIssueStatusUpdated(issue.organizationId.toString(), {
+        issueKey: issue.key,
+        title: issue.title,
+        fromStatus: oldStatus,
+        toStatus: issue.status,
+        actorName: actor?.name || 'Team member',
+      }).catch((e) => console.warn('[Slack Notification Error]', e));
+    }
+
+    // Send Email notification on new assignment
+    if (
+      updates.assigneeId !== undefined &&
+      updates.assigneeId?.toString() !== oldAssignee &&
+      updatedIssue.assigneeId?.email
+    ) {
+      const actor = await User.findById(userId);
+      EmailService.sendIssueAssignedEmail({
+        recipientEmail: updatedIssue.assigneeId.email,
+        recipientName: updatedIssue.assigneeId.name,
+        issueKey: issue.key,
+        issueTitle: issue.title,
+        priority: issue.priority,
+        assignedBy: actor?.name || 'Team member',
+      }).catch((e) => console.warn('[Email Notification Error]', e));
+    }
+
+    return updatedIssue as IIssue;
   }
 
   public static async deleteIssue(issueId: string, userId: string) {
