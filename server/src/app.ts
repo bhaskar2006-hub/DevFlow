@@ -17,23 +17,9 @@ import activityRoutes from './routes/activity.routes';
 const app: Application = express();
 
 // Security & utility middlewares
-app.use(helmet());
-
-const rawCorsOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
-  : null;
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-      if (!origin) return callback(null, true);
-      if (!rawCorsOrigins || rawCorsOrigins.includes('*') || rawCorsOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(null, true); // reflect origin
-    },
-    credentials: true,
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   })
