@@ -28,9 +28,3 @@ services:
         sync: false
       - key: API_URL
         value: https://devflow-backend.onrender.com
-      - key: CLIENT_URL
-        value: https://devflow123.vercel.app
-      - key: RESEND_API_KEY
-        sync: false
-      - key: FROM_EMAIL
-        value: noreply@devflow.app
